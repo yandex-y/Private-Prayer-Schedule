@@ -2,29 +2,28 @@
 let getTimeHtml = document.querySelectorAll('.container div :nth-child(2)'),
     getTrHtml = document.querySelectorAll('.container > div'),
     database,
-    labelTanggal = document.querySelector('h1 > label'),
+    labelTanggal = document.getElementById('tgl'),
     display = document.querySelector('.display'),
-    data = fetch(`https://api.myquran.com/v1/sholat/jadwal/1619/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`);
+    data = fetch(`https://api.myquran.com/v1/sholat/jadwal/1634/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`);
+    
     //https://api.myquran.com/v1/sholat/jadwal/1619/2022/1/1
     
 //RUN FUNCTION
 cekLocalStorage();
-gagal()
+offlineUpdate()
 onlineUpdate()
-
 
 //FUNCTION 
 function cekLocalStorage(){
     if(localStorage.getItem('prayer') === null){
-        localStorage.setItem('prayer',`{"tanggal":"null, 00/00/0000","imsak":"00:00","subuh":"00:00","terbit":"00:00","dzuhur":"00:00","ashar":"00:00","maghrib":"00:00","isya":"00:00"}`);
+        localStorage.setItem('prayer',`{"tanggal":null, 00/00/0000","imsak":"00:00","subuh":"00:00","terbit":"00:00","dzuhur":"00:00","ashar":"00:00","maghrib":"00:00","isya":"00:00","lokasi":null}`);
     }
 }
 
-function gagal(){
+function offlineUpdate(){
     const x = JSON.parse(localStorage.getItem('prayer'));
     
     labelTanggal.innerHTML = x.tanggal
-    
     getTimeHtml[0].innerHTML = x.imsak
     getTimeHtml[1].innerHTML = x.subuh
     getTimeHtml[2].innerHTML = x.terbit
@@ -32,6 +31,8 @@ function gagal(){
     getTimeHtml[4].innerHTML = x.ashar
     getTimeHtml[5].innerHTML = x.maghrib
     getTimeHtml[6].innerHTML = x.isya
+    h1kota = document.getElementById('h1kota');
+    h1kota.innerHTML = x.lokasi;
     
     itemActive(x)
     setInterval(() => itemActive(x),60000)
@@ -52,8 +53,13 @@ function onlineUpdate(){
     data
 .then(data => data.json())
 .then(data => {
+    const kota = data.data.lokasi,
+    h1kota = document.getElementById('h1kota');
+    h1kota.innerHTML = kota;
     const x = data.data.jadwal;
+    
     labelTanggal.innerHTML = x.tanggal
+    
     
     getTimeHtml[0].innerHTML = x.imsak
     getTimeHtml[1].innerHTML = x.subuh
@@ -76,7 +82,8 @@ function onlineUpdate(){
     ashar: x.ashar,
     maghrib: x.maghrib,
     isya: x.isya,
-    date: x.date
+    date: x.date,
+    lokasi: kota
     }
     
     localStorage.setItem('prayer',JSON.stringify(jadwal))
