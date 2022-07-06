@@ -1,201 +1,230 @@
 //VARIABEL
-let getTimeHtml = document.querySelectorAll('.container div :nth-child(2)'),
-    getTrHtml = document.querySelectorAll('.container > div'),
-    database,
-    labelTanggal = document.getElementById('tgl'),
-    display = document.querySelector('.display'),
-    data = fetch(`https://api.myquran.com/v1/sholat/jadwal/1634/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`);
+    //Element HTML
+    const getTimeHtml = document.querySelectorAll('.container div :nth-child(2)');
+    const getTrHtml = document.querySelectorAll('.container > div');
+    const labelTanggal = document.getElementById('tgl');
+    const display = document.querySelector('.display');
+    const kota = document.getElementById('h1kota');
     
-    //https://api.myquran.com/v1/sholat/jadwal/1619/2022/1/1
+    //Data
+    const dataLocIDFetch = fetch(`https://api.myquran.com/v1/sholat/kota/semua`);
+    const data = function(){
+        //https://api.myquran.com/v1/sholat/jadwal/1301/2022/7/5
+        if(localStorage.getItem('city') === null){
+            //Default Kota Jakarta
+            return fetch(`https://api.myquran.com/v1/sholat/jadwal/1301/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`)
+        }else{
+            return fetch(`https://api.myquran.com/v1/sholat/jadwal/${localStorage.getItem('city')}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`)
+        }
+    }
     
-//RUN FUNCTION
-cekLocalStorage();
-offlineUpdate()
-onlineUpdate()
+    
+//RUN FUNCTION & Event
+upDataTLS()
+kota.addEventListener('change', () => {
+    localStorage.setItem('city',`${kota.value}`)
+    upDataTLS()
+})
+
 
 //FUNCTION 
-function cekLocalStorage(){
-    if(localStorage.getItem('prayer') === null){
-        localStorage.setItem('prayer',`{"tanggal":null, 00/00/0000","imsak":"00:00","subuh":"00:00","terbit":"00:00","dzuhur":"00:00","ashar":"00:00","maghrib":"00:00","isya":"00:00","lokasi":null}`);
+function upDataTLS(){
+    
+    data().then(x => x.json()).then(y => {
+        const root = y.data.jadwal;
+        const dataOfArray = [y.data.lokasi,root.tanggal,root.imsak,root.subuh,root.terbit,root.dzuhur,root.ashar,root.maghrib,root.isya,y.data.id,root.date];
+        updateJadwal(dataOfArray)
+        innerHTML()
+        updateLocID()
+    })
+    
+    if(localStorage.getItem('prayer') == null){
+        const dataOfArray = ['-','-, -/-/-','-:-','-:-','-:-','-:-','-:-','-:-','-:-','-','-'];
+        updateJadwal(dataOfArray)
     }
+    innerHTML()
+    updateLocID()
 }
 
-function offlineUpdate(){
-    const x = JSON.parse(localStorage.getItem('prayer'));
-    
-    labelTanggal.innerHTML = x.tanggal
-    getTimeHtml[0].innerHTML = x.imsak
-    getTimeHtml[1].innerHTML = x.subuh
-    getTimeHtml[2].innerHTML = x.terbit
-    getTimeHtml[3].innerHTML = x.dzuhur
-    getTimeHtml[4].innerHTML = x.ashar
-    getTimeHtml[5].innerHTML = x.maghrib
-    getTimeHtml[6].innerHTML = x.isya
-    h1kota = document.getElementById('h1kota');
-    h1kota.innerHTML = x.lokasi;
-    
-    itemActive(x)
-    setInterval(() => itemActive(x),60000)
-    
-    cekUpdate(x)
+function updateJadwal(x){
+    localStorage.setItem('prayer',`
+    {
+        "id": "${x[9]}",
+        "lokasi": "${x[0]}",
+        "jadwal": {
+            "tanggal": "${x[1]}",
+            "imsak": "${x[2]}",
+            "subuh": "${x[3]}",
+            "terbit": "${x[4]}",
+            "dzuhur": "${x[5]}",
+            "ashar": "${x[6]}",
+            "maghrib": "${x[7]}",
+            "isya": "${x[8]}",
+            "date": "${x[10]}"
+        }
+    }`);
 }
 
-function cekUpdate(x){
-    const tanggalJSON = new Date(x.date),
-          tanggalNow = new Date(`${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}`);
+function innerHTML(){
+    //VARIABEL
+    const root = JSON.parse(localStorage.getItem('prayer')).jadwal;
+    const dateLS = new Date(root.date);
+    const makeDateNow = new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate(),7);
+    const waktuSholat = [root.imsak,root.subuh,root.terbit,root.dzuhur,root.ashar,root.maghrib,root.isya];
+    let num = 0;
+    
+    //INNER HTML
+    waktuSholat.forEach( x => {
+        getTimeHtml[num].innerHTML = x
+        num++
+    })
+    labelTanggal.innerHTML = root.tanggal;
 
-    if(tanggalJSON.getFullYear() == tanggalNow.getFullYear() && tanggalJSON.getMonth() == tanggalNow.getMonth() && tanggalJSON.getDate() == tanggalNow.getDate()){
+    if(makeDateNow.getTime() == dateLS.getTime()){
         labelTanggal.style.color = '#9BFF34'
     }
+    
+    //RUN FUNCTION
+    itemActive(waktuSholat)
+    //setInterval(itemActive,1000)
 }
 
-function onlineUpdate(){
-    data
-.then(data => data.json())
-.then(data => {
-    const kota = data.data.lokasi,
-    h1kota = document.getElementById('h1kota');
-    h1kota.innerHTML = kota;
-    const x = data.data.jadwal;
+function updateLocID(){
+    const data = JSON.parse(localStorage.getItem('locId'));
     
-    labelTanggal.innerHTML = x.tanggal
-    
-    
-    getTimeHtml[0].innerHTML = x.imsak
-    getTimeHtml[1].innerHTML = x.subuh
-    getTimeHtml[2].innerHTML = x.terbit
-    getTimeHtml[3].innerHTML = x.dzuhur
-    getTimeHtml[4].innerHTML = x.ashar
-    getTimeHtml[5].innerHTML = x.maghrib
-    getTimeHtml[6].innerHTML = x.isya
-    
-    itemActive(x)
-    setInterval(() => itemActive(x),60000)
-    cekUpdate(x)
-    
-    const jadwal = {
-    tanggal: x.tanggal,
-    imsak: x.imsak,
-    subuh: x.subuh,
-    terbit: x.terbit,
-    dzuhur: x.dzuhur,
-    ashar: x.ashar,
-    maghrib: x.maghrib,
-    isya: x.isya,
-    date: x.date,
-    lokasi: kota
+    if(data === null){
+        dataLocIDFetch.then(x => x.json()).then(y => {
+            //variabel arr id & lokasi kosong
+            const idLocArr = [[],[]];
+            
+            const idLocStr = ["id","lokasi"];
+            
+            idLocArr.forEach((x,i) => {
+                push(y,idLocArr[i],idLocStr[i])
+            })
+            
+            function push(x,il,str){
+                x.forEach(y => {
+                    il.push(y[str])
+                })
+            }
+            
+            localStorage.setItem('locId',`{"id": ${JSON.stringify(idLocArr[0])},"locName": ${JSON.stringify(idLocArr[1])}}`)
+        })
     }
+    innerHTMLLocID()
+}
+
+function itemActive(y){
+    const x = JSON.parse(localStorage.getItem('prayer')).jadwal;
+    const jadwalStr = ['imsak','subuh','terbit','dzuhur','ashar','maghrib','isya'];
+    const createDateNow = new Date(1, 1, 1, new Date().getHours(), new Date().getMinutes()).getTime();
     
-    localStorage.setItem('prayer',JSON.stringify(jadwal))
-})
-}
-
-
-function itemActive(x){
-    const jamImsak = parseInt(x.imsak.substring(0,2)),
-          menitImsak = parseInt(x.imsak.substring(3,5)),
-          createImsak = new Date(1, 1, 1, jamImsak, menitImsak).getTime(),
-          jamSubuh = parseInt(x.subuh.substring(0,2)),
-          menitSubuh = parseInt(x.subuh.substring(3,5)),
-          createSubuh = new Date(1, 1, 1, jamSubuh, menitSubuh).getTime(),
-          jamTerbit = parseInt(x.terbit.substring(0,2)),
-          menitTerbit = parseInt(x.terbit.substring(3,5)),
-          createTerbit = new Date(1, 1, 1, jamTerbit, menitTerbit).getTime(),
-          jamDzuhur = parseInt(x.dzuhur.substring(0,2)),
-          menitDzuhur = parseInt(x.dzuhur.substring(3,5)),
-          createDzuhur = new Date(1, 1, 1, jamDzuhur, menitDzuhur).getTime(),
-          jamAshar = parseInt(x.ashar.substring(0,2)),
-          menitAshar = parseInt(x.ashar.substring(3,5)),
-          createAshar = new Date(1, 1, 1, jamAshar, menitAshar).getTime(),
-          jamMaghrib = parseInt(x.maghrib.substring(0,2)),
-          menitMaghrib = parseInt(x.maghrib.substring(3,5)),
-          createMaghrib = new Date(1, 1, 1, jamMaghrib, menitMaghrib).getTime(),
-          jamIsya = parseInt(x.isya.substring(0,2)),
-          menitIsya = parseInt(x.isya.substring(3,5)),
-          createIsya = new Date(1, 1, 1, jamIsya, menitIsya).getTime(),
-          createDateNow = new Date(1, 1, 1, new Date().getHours(), new Date().getMinutes()).getTime()
-          
-          let active, next;
-          if(createImsak >= createDateNow){
-            transparent()
-              getTrHtml[0].style.background = '#9BFF34';
-              active = createImsak;
-              next = 'Imsak';
-          }else if(createSubuh >= createDateNow){
-            transparent()
-              getTrHtml[1].style.background = '#9BFF34';
-              active = createSubuh;
-              next = 'Subuh';
-          }else if(createTerbit >= createDateNow){
-            transparent()
-              getTrHtml[2].style.background = '#9BFF34'
-              active = createTerbit;
-              next = 'Terbit';
-          }else if(createDzuhur >= createDateNow){
-            transparent()
-              getTrHtml[3].style.background = '#9BFF34'
-              active = createDzuhur;
-              next = 'Dzuhur';
-          }else if(createAshar >= createDateNow){
-            transparent()
-              getTrHtml[4].style.background = '#9BFF34';
-              active = createAshar;
-              next = 'Ashar';
-          }else if(createMaghrib >= createDateNow){
-            transparent()
-              getTrHtml[5].style.background = '#9BFF34'
-              active = createMaghrib;
-              next = 'Maghrib';
-          }else if(createIsya >= createDateNow){
-            transparent()
-              getTrHtml[6].style.background = '#9BFF34'
-              active = createIsya;
-              next = 'Isya';
-          }else{
-            transparent();
-            getTrHtml[6].style.background = '#9BFF34'
-            active = createIsya;
-              next = 'last';
-          }
-
-          lookDisplay(active,createDateNow,next)
-}
-
-function lookDisplay(active,createDateNow,next){
-  let jarak;
-
-  if(next === 'last'){
-    jarak = jarak = (createDateNow - active) / 1000 / 60;//dalam menit;
-    display.innerHTML = `Isya ${convertToHours(jarak)} Yang Lalu`
+    //Variabel Jam, Menit
+    const data = [];
+        //Mengisi Variabel
+        jadwalStr.forEach((o,i) => {
+            data.push([parseInt(x[jadwalStr[i]].substring(0,2)),parseInt(x[jadwalStr[i]].substring(3,5))])
+        })
+    //Variabel getTime
+    const getTime = [];
+        //Mengisi Variabel
+        data.forEach((o,i) => {
+            getTime.push(new Date(1, 1, 1, data[i][0], data[i][1]).getTime())
+        })
+    let active;
+    let last;
+    let index;
+    
+    if(getTime[0] >= createDateNow){
+        transparent(0,jadwalStr);
+        active = getTime[0];
+        index = 0;
+    }else if(getTime[1] >= createDateNow){
+        transparent(1,jadwalStr);
+        active = getTime[1];
+        index = 1;
+    }else if(getTime[2] >= createDateNow){
+        transparent(2,jadwalStr);
+        active = getTime[2];
+        index = 2;
+    }else if(getTime[3] >= createDateNow){
+        transparent(3,jadwalStr);
+        active = getTime[3];
+        index = 3;
+    }else if(getTime[4] >= createDateNow){
+        transparent(4,jadwalStr);
+        active = getTime[4];
+        index = 4;
+    }else if(getTime[5] >= createDateNow){
+        transparent(5,jadwalStr);
+        active = getTime[5];
+        index = 5;
+    }else if(getTime[6] >= createDateNow){
+        transparent(6,jadwalStr);
+        active = getTime[6];
+        index = 6;
     }else{
-      jarak = (active - createDateNow) / 1000 / 60;//dalam menit;
-      display.innerHTML = `${convertToHours(jarak)} Lagi Menuju ${next}`
+        last = true;
+        transparent(6,jadwalStr);
+        active = getTime[6];
     }
+    
+    resultDisp(active,createDateNow,last,jadwalStr,index);
 }
 
-function transparent(){
-    getTrHtml[0].style.background = 'transparent';
-    getTrHtml[1].style.background = 'transparent'
-    getTrHtml[2].style.background = 'transparent'
-    getTrHtml[3].style.background = 'transparent'
-    getTrHtml[4].style.background = 'transparent'
-    getTrHtml[5].style.background = 'transparent'
-    getTrHtml[6].style.background = 'transparent'
+function innerHTMLLocID(){
+    const data1 = JSON.parse(localStorage.getItem('prayer')).id;
+    const data2 = JSON.parse(localStorage.getItem('locId'));
+    const id = data2.id;
+    const locName = data2.locName;
+    
+    id.forEach((x,i) => {
+        let text = document.createTextNode(locName[i]);
+        let tag = document.createElement('option');
+        
+        tag.value = id[i];
+        data1 == id[i] ? tag.selected = true : tag.selected = false;
+        tag.appendChild(text);
+        kota.appendChild(tag)
+        i++
+    })
+}
+
+function transparent(i,data){
+    const dataArr = data;
+    const index = i;
+    
+    dataArr.forEach((e,i) => {
+        
+        if(index === i){
+            getTrHtml[i].style.background = '#9BFF34';
+        }else{
+            getTrHtml[i].style.background = 'transparent';
+        }
+    })
+}
+
+function resultDisp(active,createDateNow,last,data,index){
+    
+    let jarak;
+    
+    if(last){
+        jarak = (createDateNow - active) / 1000 / 60;//dalam menit;
+        display.innerHTML = `${data[data.length-1].toUpperCase()} ${convertToHours(jarak)} Yang Lalu`
+    }else{
+        jarak = (active - createDateNow) / 1000 / 60;//dalam menit;
+        display.innerHTML = `${convertToHours(jarak)} Lagi Menuju ${data[index].toUpperCase()}`
+    }
 }
 
 function convertToHours(jarak){
-  if(jarak >= 60){
     const jam = Math.floor(jarak/60);
     const menit = Math.floor(((jarak / 60 ) - jam) * 60);
-
-    if(menit == 0){
-      jarak = `${jam} Jam`;
-    }else{
-      jarak = `${jam} Jam ${menit} Menit`;
-    }
     
-  }else{
-    jarak = `${jarak} Menit`
-  }
-  return jarak
+    return `${jam != 0 ? jam + ' Jam' : ''} ${menit != 0 ? menit + ' Menit' : ''}`
 }
+
+
+
+
