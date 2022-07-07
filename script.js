@@ -10,19 +10,20 @@
     const dataLocIDFetch = fetch(`https://api.myquran.com/v1/sholat/kota/semua`);
     const data = function(){
         //https://api.myquran.com/v1/sholat/jadwal/1301/2022/7/5
-        if(localStorage.getItem('city') === null){
-            //Default Kota Jakarta
-            return fetch(`https://api.myquran.com/v1/sholat/jadwal/1301/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`)
-        }else{
-            return fetch(`https://api.myquran.com/v1/sholat/jadwal/${localStorage.getItem('city')}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`)
-        }
+        const idDefault = 1301;
+        const idFromLS = localStorage.getItem('city');
+        let idInput;
+        
+        idFromLS === null ? idInput = idDefault : idInput = idFromLS;
+        
+        return fetch(`https://api.myquran.com/v1/sholat/jadwal/${idInput}/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${new Date().getDate()}`)
     }
     
     
 //RUN FUNCTION & Event
 upDataTLS()
 kota.addEventListener('change', () => {
-    localStorage.setItem('city',`${kota.value}`)
+    localStorage.setItem('city',`${kota.value}`);
     upDataTLS()
 })
 
@@ -86,12 +87,12 @@ function innerHTML(){
     
     //RUN FUNCTION
     itemActive(waktuSholat)
-    //setInterval(itemActive,1000)
+    setInterval(itemActive,14400)
 }
 
 function updateLocID(){
     const data = JSON.parse(localStorage.getItem('locId'));
-    
+
     if(data === null){
         dataLocIDFetch.then(x => x.json()).then(y => {
             //variabel arr id & lokasi kosong
@@ -110,6 +111,7 @@ function updateLocID(){
             }
             
             localStorage.setItem('locId',`{"id": ${JSON.stringify(idLocArr[0])},"locName": ${JSON.stringify(idLocArr[1])}}`)
+            window.location.reload()
         })
     }
     innerHTMLLocID()
@@ -211,7 +213,9 @@ function resultDisp(active,createDateNow,last,data,index){
     
     if(last){
         jarak = (createDateNow - active) / 1000 / 60;//dalam menit;
-        display.innerHTML = `${data[data.length-1].toUpperCase()} ${convertToHours(jarak)} Yang Lalu`
+        display.innerHTML = `${data[data.length-1].toUpperCase()} ${convertToHours(jarak)} Yang Lalu`;
+    }else if(active == createDateNow){
+        display.innerHTML = `Sekarang Waktu ${data[index].toUpperCase()}`
     }else{
         jarak = (active - createDateNow) / 1000 / 60;//dalam menit;
         display.innerHTML = `${convertToHours(jarak)} Lagi Menuju ${data[index].toUpperCase()}`
